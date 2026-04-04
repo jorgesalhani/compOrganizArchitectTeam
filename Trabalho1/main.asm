@@ -35,6 +35,28 @@ str_list_tipos:
 str_get_tipo:
 	# String suport para obter tipo de  vagão a inserir
 	.asciz "\nDigite uma opção para continuar: "
+str_get_id:
+	# String suporte para solicitar ID de busca
+	.asciz "\nDigite um ID do vagão a ser buscado: "
+	
+str_busca_vagao1:
+	# String suport para print do vagão encontrado
+	.asciz "Vagão encontrado: ID "
+
+str_busca_vagao2:
+	# String suport para print do vagão encontrado
+	.asciz " | Tipo "
+	
+str_new_line:
+	.asciz "\n"
+
+str_resp_add_inicio:
+	# String resposta para adição ao inicio
+	.asciz "Vagão inserido ao início com sucesso!"
+	
+str_resp_add_final:
+	# String resposta para adição ao inicio
+	.asciz "Vagão inserido ao final com sucesso!"
 
 #mensagens de  teste
 str_all: .asciz "Erro na alocação de memoria"
@@ -104,8 +126,7 @@ cases:	#Adiciona  No - inicio
 	beq s0, a4, list_trem
 	
 	#Buscar vagão
-	# TODO
-	#beq s0, a5, get_vagao
+	beq s0, a5, get_vagao
 	
 	j finaliza
 
@@ -139,6 +160,43 @@ input_infos_novo_vagao:
 	add a2, zero, a0 # a1 = a0
 	
 	jr ra
+	
+input_get_id:
+	# Obtenção de ID para busta
+	# Retorno:
+	#  a5: ID inserido para busca
+	
+	# Print msg input a usuaria
+	la a0, str_get_id
+	addi a7, zero, 4
+	ecall 
+	
+	# Obter ID
+	addi a7, zero, 5
+	ecall
+	
+	# salvar em a5
+	add a5, zero, a0
+	
+	jr ra
+
+buscar_vagao_por_id:
+	# Obtenção do vagão via ID
+	# Argumentos esperados:
+	#  a5: ID para busca
+	
+	# a1 = 2 para percorrer trem e imprimir caso  encontre ID
+	addi a1, zero, 2
+	
+	# End primeiro vagão anterior
+	#  precisamos dos últimos 4 bytes (total de 16)
+	#  a partir do endereço da locomotiva 
+	add a4, zero, s1
+
+	# Caminhar pelo trem até o final
+	#  ou até encontrar ID buscado
+	j loop_percorre_trem
+	
 	
 criar_novo_vagao:
 	# Criação de novos vagões soltos (i.e. não conectados inicialmente)
@@ -211,14 +269,17 @@ loop_percorre_trem:
 	#  da lista linkada (trem)
 	# Argumentos esperados
 	#  a1: opção de função a ser executada por vagão
-	#  a3: end do vagão novo
+	#  a3: end do vagão novo (válido para o caso inserir novo vagão)
 	#  a4: end do próximo vagão
+	#  a5: id do vagão buscado (válido para o caso de busca por vagão)
 	
 	# Condição de continuação: endereço de proximo vagão não nulo
 	lw t0, 12(a4)
 	bne t0, zero, func_por_vagao	# if a4 != 0: func_por_vagao
 	
 	addi t1, zero, 1
+	addi t2, zero, 2
+	
 	# Retorno às funções originais
 	beq a1, zero, fim_loop_add_final
 	beq a1, t1, fim_loop_print
@@ -231,13 +292,16 @@ func_por_vagao:
 	#  a1: opção de função a ser executada por vagão
 	#  a1 = 0: inserção ao final
 	#  a1 = 1: print vagão
+	#  a1 = 2: busca por id
 	
 	addi t0, zero, 1
+	addi t1, zero, 2
 	beq a1, zero, func_pass
 	beq a1, t0, print_suporte_por_vagao
+	beq a1, t1, reconhecer_vagao_por_id
 	
 	j loop_percorre_trem
-	
+
 func_pass:
 	# Passa para novo vagão, preservando o último em registro
 	# Retorno:
@@ -245,6 +309,59 @@ func_pass:
 	#  a3: end vagão atual
 	lw a4, 12(a4) #novo->next = head
 	j loop_percorre_trem
+
+reconhecer_vagao_por_id:
+	# Caso Id inserido confere com atual vagão, imprimir
+	# Argumentos esperados
+	#  a5: ID vagão buscado
+	#  a4: end próximo vagão
+	
+	# Id vagao
+	lw t0, 4(a4)
+	
+	beq a5, t0, print_vagao_encontrado
+	
+	# Mover para novo vagão
+	lw a4, 12(a4) #novo->next = head
+	
+	j loop_percorre_trem
+	
+print_vagao_encontrado:
+	# Print cagão quando encontrado
+	# Argumentos esperados
+	#  a4: end vagão atual
+	# Formato de print
+	#   ID: <id> | Tipo: tipo_vagão
+	
+	# Print suporte
+	la a0, str_busca_vagao1
+	addi a7, zero, 4
+	ecall
+	
+	# Print ID
+	lw t0, 4(a4)
+	add a0, zero, t0
+	addi a7, zero, 1
+	ecall
+	
+	# print suporte
+	la a0, str_busca_vagao2
+	addi a7, zero, 4
+	ecall
+	
+	# Print tipo
+	lw t0, 8(a4)
+	add a0, zero, t0
+	addi a7, zero, 1
+	ecall
+	
+	# Pula linha
+	la a0, str_new_line
+	addi a7, zero, 4
+	ecall
+	
+	# Retornar à chamada da função
+	jr ra
 
 anexar_vagao_ao_final:
 	# Adicionar como último vagão da locomotiva
@@ -296,6 +413,16 @@ add_inicio:
 	# Vincular novo vagão à locomotiva
 	jal anexar_vagao_ao_inicio
 	
+	# Print op com sucesso
+	addi a7, zero, 4
+	
+	la a0, str_resp_add_inicio
+	ecall
+	
+	# Print new line
+	la a0, str_new_line
+	ecall
+	
 	#voltando pro menu principal
 	j menu_inicial
 	
@@ -316,7 +443,32 @@ add_final:
 	# Vincular novo vagão à locomotiva
 	jal anexar_vagao_ao_final
 	
+	# Print op com sucesso
+	addi a7, zero, 4
+	
+	la a0, str_resp_add_final
+	ecall
+	
+	# Print new line
+	la a0, str_new_line
+	ecall
+	
 	#voltando pro menu principal
+	j menu_inicial
+	
+get_vagao:
+	#temos que verificar se ja existe
+	jal carrega_locomotiva
+	# s1: End da locomotiva (heap)
+	
+	# Solicitar inserção de ID para busca
+	jal input_get_id
+	# a5: ID_novo_vagao
+	
+	# Buscar id solicitado
+	jal buscar_vagao_por_id
+	
+	# Voltando ao menu principal
 	j menu_inicial
 	
 cria_locomotiva:
@@ -396,6 +548,11 @@ list_trem:
 	
 	# Redirecionando para loop de suporte para  listagem do trem
 	jal loop_percorre_trem
+	
+	# Print new line
+	addi a7, zero, 4
+	la a0, str_new_line
+	ecall
 	
 	# Retorno ao menu inicial
 	j menu_inicial
