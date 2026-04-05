@@ -327,7 +327,7 @@ reconhecer_vagao_por_id:
 	j loop_percorre_trem
 	
 print_vagao_encontrado:
-	# Print cagão quando encontrado
+	# Print vagão quando encontrado
 	# Argumentos esperados
 	#  a4: end vagão atual
 	# Formato de print
@@ -509,7 +509,9 @@ cria_locomotiva:
 	jr ra
 	
 print_suporte_por_vagao:
-	# Função a ser executada por vagão
+	# Função print a ser executada por vagão
+	# Argumentos esperados
+	#  a4: Endereço do próximo vagão
 	
 	# Print id vagão
 	lw a0, 4(a4)		# a0 = vagao->id
@@ -530,6 +532,9 @@ print_suporte_por_vagao:
 list_trem:
 	# Listagem de todos os vagões do trem criado
 	#  formato de saída: Trem: 1 -> 2 -> 3 -> 4	
+	
+	jal carrega_locomotiva
+	# s1: End da locomotiva (heap)
 
 	# Print msg trem 0
 	la a0, str_0vg
@@ -537,14 +542,13 @@ list_trem:
 	ecall # print(trem)
 	
 	# Salvando em a4 ponteiro para inicio do trem
-	la a4, ptr_init	# a4 = ptr_init
-	lw a4, 0(a4) # a4 = end locomotiva
+	add a4, zero, s1 # a4 = end locomotiva
 	
-	# a5 como argumento para laço. Aqui
+	# a1 como argumento para laço. Aqui
 	#  queremos que a função utilizada seja de 
-	#  print por vagão: a5 = 1
+	#  print por vagão: a1 = 1
 	
-	addi a5, zero, 1 # a5 = 1
+	addi a1, zero, 1 # a1 = 1
 	
 	# Redirecionando para loop de suporte para  listagem do trem
 	jal loop_percorre_trem

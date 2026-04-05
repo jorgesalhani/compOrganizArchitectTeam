@@ -1,0 +1,17 @@
+@startuml
+
+title "Sair"
+
+actor Usuária as user
+participant finaliza as final
+
+user -> final : s0: Opt menu (= 6)
+activate final
+
+final -> final : Mensagem de fim
+
+user <- final
+deactivate final
+
+
+@enduml

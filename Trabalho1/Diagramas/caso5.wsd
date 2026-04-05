@@ -1,0 +1,67 @@
+@startuml
+
+title "Buscar vagão"
+
+actor Usuária as user
+participant get_vagao as getVagao
+participant carrega_locomotiva as carLocom
+participant input_get_id as inGetId
+participant buscar_vagao_por_id as buscPorId
+participant loop_percorre_trem as loopTrem
+participant func_por_vagao as funcPorVag
+participant reconhecer_vagao_por_id as reconVag
+participant print_vagao_encontrado as printVag
+
+user -> getVagao : s0: Opt menu (= 5)
+activate getVagao
+
+getVagao -> carLocom
+activate carLocom
+
+getVagao <- carLocom : s1: Endereço\nlocomotiva (heap)
+deactivate
+
+getVagao -> inGetId
+activate inGetId
+
+getVagao <- inGetId : a5: ID vagão desejado
+deactivate inGetId
+
+getVagao -> buscPorId : s1: Endereço locomotiva\na5: ID vagão desejado
+activate buscPorId
+
+buscPorId -> loopTrem : a1: opt função por vagão (= 2)\na4: Endereço proximo vagão\na5: ID vagão buscado
+activate loopTrem
+
+loopTrem -> funcPorVag : a1: opt função (= 2)
+activate funcPorVag
+
+funcPorVag -> reconVag : a4: Endereço próximo vagão\na5: ID vagão buscado
+activate reconVag
+
+reconVag -> printVag : a4: Endereço vagão atual
+activate printVag
+
+printVag -> printVag : Print\nID | Tipo
+
+reconVag <- printVag
+deactivate printVag
+
+funcPorVag <- reconVag : a4: Endereço próximo vagão\n(atualizado)
+deactivate reconVag
+
+loopTrem <- funcPorVag
+deactivate funcPorVag
+
+buscPorId <- loopTrem
+deactivate loopTrem
+
+getVagao <- buscPorId
+deactivate buscPorId
+
+getVagao -> getVagao : Mensagem de sucesso!
+
+user <- getVagao
+deactivate getVagao 
+
+@enduml

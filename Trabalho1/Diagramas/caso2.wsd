@@ -1,0 +1,78 @@
+@startuml
+
+title "Adicionar vagão ao final"
+
+actor Usuária as user
+participant add_final as addFim
+participant carrega_locomotiva as carLocom
+participant input_infos_novo_vagao as inNovoVag
+participant criar_novo_vagao as criarVag
+participant anexar_vagao_ao_final as anexFim
+participant loop_percorre_trem as loopTrem
+participant func_por_vagao as funcPorVag
+participant func_pass as funcPass
+
+user -> addFim : s0: Opt menu (= 2)
+activate addFim
+
+addFim -> carLocom
+activate carLocom
+
+addFim <- carLocom : s1: Endereço\nlocomotiva (heap)
+deactivate
+
+addFim -> inNovoVag
+activate inNovoVag
+
+inNovoVag -> inNovoVag : id_prox += 1
+
+addFim <- inNovoVag : a1: ID novo vagão\na2: Tipo novo vagão
+deactivate inNovoVag
+
+addFim -> criarVag : a1: ID\na2: Tipo
+activate criarVag
+
+criarVag -> criarVag : alocar espaço\npara novo vagão\n(heap)
+note left of criarVag
+	Tamanho: 16 bytes reservados
+
+	Padrão de endereços:
+	  0-3 bytes: end vagão anterior (= 0 default)
+	  4-7 bytes: ID vagão
+	  8-12 bytes: TIPO vagão
+	  13-16 bytes: end vagão próximo (= 0 default)
+end note
+
+addFim <- criarVag : a3: Endereço\ndo vagão criado
+deactivate criarVag
+
+addFim -> anexFim : s1: Endereço locomotiva\na3: Endereço novo vagão
+activate anexFim
+
+anexFim -> loopTrem : a1: opt função por vagão (= 0)\na3: Endereço novo vagão\na4: Endereço proximo vagão
+activate loopTrem
+
+loopTrem -> funcPorVag : a1: opt função (= 0)
+activate funcPorVag
+
+funcPorVag -> funcPass : a4: Endereço próximo vagão\na3: Endereço vagão atual
+activate funcPass
+
+funcPorVag <- funcPass : a4: Endereço próximo vagão\n(atualizado)
+deactivate funcPass
+
+loopTrem <- funcPorVag
+deactivate funcPorVag
+
+anexFim <- loopTrem
+deactivate loopTrem
+
+addFim <- anexFim
+deactivate anexFim
+
+addFim -> addFim : Mensagem de sucesso!
+
+user <- addFim
+deactivate addFim 
+
+@enduml
