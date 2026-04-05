@@ -1,0 +1,44 @@
+@startuml
+
+title "Listar trem"
+
+actor Usuária as user
+participant list_trem as listTrem
+participant carrega_locomotiva as carLocom
+participant loop_percorre_trem as loopTrem
+participant func_por_vagao as funcPorVag
+participant print_suporte_por_vagao as printVag
+
+user -> listTrem : s0: Opt menu (= 4)
+activate listTrem
+
+listTrem -> carLocom
+activate carLocom
+
+listTrem <- carLocom : s1: Endereço\nlocomotiva (heap)
+deactivate
+
+listTrem -> loopTrem : a1: opt função por vagão (= 0)\na3: Endereço novo vagão\na4: Endereço proximo vagão
+activate loopTrem
+
+loopTrem -> funcPorVag : a1: opt função (= 1)
+activate funcPorVag
+
+funcPorVag -> printVag : a4: Endereço próximo vagão
+activate printVag
+
+printVag -> printVag : Print ID\ndo vagão
+
+funcPorVag <- printVag
+deactivate printVag
+
+loopTrem <- funcPorVag
+deactivate funcPorVag
+
+listTrem <- loopTrem
+deactivate loopTrem
+
+user <- listTrem
+deactivate listTrem 
+
+@enduml

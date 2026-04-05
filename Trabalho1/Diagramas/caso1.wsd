@@ -1,0 +1,59 @@
+@startuml
+
+title "Adicionar vagão no início"
+
+actor Usuária as user
+participant add_inicio as addIni
+participant carrega_locomotiva as carLocom
+participant input_infos_novo_vagao as inNovoVag
+participant criar_novo_vagao as criarVag
+participant anexar_vagao_ao_inicio as anexIni
+
+user -> addIni : s0 = 1
+activate addIni
+
+addIni -> carLocom
+activate carLocom
+
+addIni <- carLocom : s1: Endereço\nlocomotiva (heap)
+deactivate
+
+addIni -> inNovoVag
+activate inNovoVag
+
+inNovoVag -> inNovoVag : id_prox += 1
+
+addIni <- inNovoVag : a1: ID novo vagão\na2: Tipo novo vagão
+deactivate inNovoVag
+
+addIni -> criarVag : a1: ID\na2: Tipo
+activate criarVag
+
+criarVag -> criarVag : alocar espaço\npara novo vagão\n(heap)
+note left of criarVag
+	Tamanho: 16 bytes reservados
+
+	Padrão de endereços:
+	  0-3 bytes: end vagão anterior (= 0 default)
+	  4-7 bytes: ID vagão
+	  8-12 bytes: TIPO vagão
+	  13-16 bytes: end vagão próximo (= 0 default)
+end note
+
+addIni <- criarVag : a3: Endereço\ndo vagão criado
+deactivate criarVag
+
+addIni -> anexIni : s1: Endereço locomotiva\na3: Endereço novo vagão
+activate anexIni
+
+anexIni -> anexIni : Novo vagão inserido\nentre locomotiva e\nprimeiro vagão
+
+addIni <- anexIni
+deactivate anexIni
+
+addIni -> addIni : Mensagem de sucesso!
+
+user <- addIni
+deactivate addIni 
+
+@enduml
