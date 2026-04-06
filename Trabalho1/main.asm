@@ -9,7 +9,7 @@
 #3 - Remover vagao pelo id
 #4 - Listar trem
 #5 - Buscar Vagao
-#0 - Sair
+#6 - Sair
 
 	.data
 	.align 0
@@ -42,14 +42,12 @@ str_get_id:
 str_busca_vagao1:
 	# String suport para print do vagão encontrado
 	.asciz "Vagão encontrado: ID "
-
 str_busca_vagao2:
 	# String suport para print do vagão encontrado
 	.asciz " | Tipo "
 	
 str_new_line:
 	.asciz "\n"
-
 str_resp_add_inicio:
 	# String resposta para adição ao inicio
 	.asciz "Vagão inserido ao início com sucesso!"
@@ -57,6 +55,11 @@ str_resp_add_inicio:
 str_resp_add_final:
 	# String resposta para adição ao inicio
 	.asciz "Vagão inserido ao final com sucesso!"
+	
+#Strings para mensagens da remoção
+str_msg_remove: .asciz "\nDigite o ID do vagao a remover: "
+str_not_found: .asciz "\nVagao nao encontrado!"
+str_no_remove: .asciz "\nNao e possivel remover a locomotiva!"
 
 #mensagens de  teste
 str_all: .asciz "Erro na alocação de memoria"
@@ -119,8 +122,7 @@ cases:	#Adiciona  No - inicio
 	beq s0, a2, add_final
 	
 	#Remover vagão por id
-	# TODO 
-	#beq s0, a3, del_vagao
+	beq s0, a3, del_vagao_interface
 	
 	#Listar trem
 	beq s0, a4, list_trem
@@ -179,7 +181,6 @@ input_get_id:
 	add a5, zero, a0
 	
 	jr ra
-
 buscar_vagao_por_id:
 	# Obtenção do vagão via ID
 	# Argumentos esperados:
@@ -192,7 +193,6 @@ buscar_vagao_por_id:
 	#  precisamos dos últimos 4 bytes (total de 16)
 	#  a partir do endereço da locomotiva 
 	add a4, zero, s1
-
 	# Caminhar pelo trem até o final
 	#  ou até encontrar ID buscado
 	j loop_percorre_trem
@@ -279,7 +279,6 @@ loop_percorre_trem:
 	
 	addi t1, zero, 1
 	addi t2, zero, 2
-	
 	# Retorno às funções originais
 	beq a1, zero, fim_loop_add_final
 	beq a1, t1, fim_loop_print
@@ -301,7 +300,7 @@ func_por_vagao:
 	beq a1, t1, reconhecer_vagao_por_id
 	
 	j loop_percorre_trem
-
+	
 func_pass:
 	# Passa para novo vagão, preservando o último em registro
 	# Retorno:
@@ -309,7 +308,7 @@ func_pass:
 	#  a3: end vagão atual
 	lw a4, 12(a4) #novo->next = head
 	j loop_percorre_trem
-
+	
 reconhecer_vagao_por_id:
 	# Caso Id inserido confere com atual vagão, imprimir
 	# Argumentos esperados
@@ -327,7 +326,7 @@ reconhecer_vagao_por_id:
 	j loop_percorre_trem
 	
 print_vagao_encontrado:
-	# Print vagão quando encontrado
+	# Print cagão quando encontrado
 	# Argumentos esperados
 	#  a4: end vagão atual
 	# Formato de print
@@ -362,6 +361,8 @@ print_vagao_encontrado:
 	
 	# Retornar à chamada da função
 	jr ra
+
+
 
 anexar_vagao_ao_final:
 	# Adicionar como último vagão da locomotiva
@@ -412,7 +413,6 @@ add_inicio:
 	
 	# Vincular novo vagão à locomotiva
 	jal anexar_vagao_ao_inicio
-	
 	# Print op com sucesso
 	addi a7, zero, 4
 	
@@ -442,7 +442,6 @@ add_final:
 	
 	# Vincular novo vagão à locomotiva
 	jal anexar_vagao_ao_final
-	
 	# Print op com sucesso
 	addi a7, zero, 4
 	
@@ -452,7 +451,6 @@ add_final:
 	# Print new line
 	la a0, str_new_line
 	ecall
-	
 	#voltando pro menu principal
 	j menu_inicial
 	
@@ -509,9 +507,7 @@ cria_locomotiva:
 	jr ra
 	
 print_suporte_por_vagao:
-	# Função print a ser executada por vagão
-	# Argumentos esperados
-	#  a4: Endereço do próximo vagão
+	# Função a ser executada por vagão
 	
 	# Print id vagão
 	lw a0, 4(a4)		# a0 = vagao->id
@@ -532,9 +528,6 @@ print_suporte_por_vagao:
 list_trem:
 	# Listagem de todos os vagões do trem criado
 	#  formato de saída: Trem: 1 -> 2 -> 3 -> 4	
-	
-	jal carrega_locomotiva
-	# s1: End da locomotiva (heap)
 
 	# Print msg trem 0
 	la a0, str_0vg
@@ -542,13 +535,14 @@ list_trem:
 	ecall # print(trem)
 	
 	# Salvando em a4 ponteiro para inicio do trem
-	add a4, zero, s1 # a4 = end locomotiva
+	la a4, ptr_init	# a4 = ptr_init
+	lw a4, 0(a4) # a4 = end locomotiva
 	
-	# a1 como argumento para laço. Aqui
+	# a5 como argumento para laço. Aqui
 	#  queremos que a função utilizada seja de 
-	#  print por vagão: a1 = 1
+	#  print por vagão: a5 = 1
 	
-	addi a1, zero, 1 # a1 = 1
+	addi a5, zero, 1 # a5 = 1
 	
 	# Redirecionando para loop de suporte para  listagem do trem
 	jal loop_percorre_trem
@@ -561,6 +555,116 @@ list_trem:
 	# Retorno ao menu inicial
 	j menu_inicial
 	
+del_vagao_interface:
+	# INTERFACE DE REMOÇÃO DE VAGÃO
+	#
+	# Fluxo:
+	# 1. Solicita o ID ao usuário
+	# 2. Chama a função de remoção
+    
+	# 1. Mensagem para o usuário
+	la a0, str_msg_remove   # "Digite o ID do vagao a remover: "
+	addi a7, zero, 4
+	ecall
+
+	# 2. Ler ID informado
+	addi a7, zero, 5        #ler inteiro
+	ecall
+	add t2, zero, a0        # t2 = ID digitado
+
+	# 3. Chamar função principal de remoção
+	jal del_vagao
+    
+	j menu_inicial
+	
+del_vagao:
+	# FUNÇÃO: remover vagão pelo ID
+	# 
+	# Fluxo:
+	# 1. Carrega a locomotiva (início da lista)
+	# 2. Lê o ID informado pelo usuário
+	# 3. Percorre a lista encadeada buscando o ID
+	# 4. Se encontrar:
+	#    - verifica se é locomotiva (não pode remover)
+	#    - ajusta ponteiros (remoção)
+	# 5. Se não encontrar, retorna ao menu
+
+
+	# Carrega endereço da locomotiva 
+	jal carrega_locomotiva     # s1 = endereço da locomotiva
+
+	# ID já vem em t2 (vindo da interface)
+
+	# Inicialização dos ponteiros de percurso
+	add t0, zero, s1           # t0 = nó atual (começa na locomotiva)
+	addi t1, zero, 0           # t1 = nó anterior 
+
+# LOOP: percorre toda a lista encadeada
+loop_remove:
+
+	# Se chegou ao fim da lista → não encontrou
+	beq t0, zero, nao_encontrado
+
+	# Carrega o ID do vagão atual
+	lw t3, 4(t0)               # t3 = atual->id
+
+	# Compara com o ID buscado
+	beq t3, t2, achou          # se igual → encontrou
+
+	# Avança na lista
+	add t1, zero, t0           # anterior = atual
+	lw t0, 12(t0)              # atual = atual->next
+
+	j loop_remove              # continua o loop
+
+# CASO: ID encontrado
+achou:
+
+	# Verifica se está tentando remover a locomotiva
+	beq t1, zero, nao_remove_locomotiva
+
+	# Ajuste de ponteiros para remoção
+
+	# t4 = próximo nó após o atual
+	lw t4, 12(t0)              # t4 = atual->next
+
+	# Faz o anterior apontar para o próximo (remove atual da lista)
+	sw t4, 12(t1)              # anterior->next = atual->next
+
+	# Se não for o último nó, ajustar ponteiro "prev"
+	beq t4, zero, fim_remove   # se próximo == zero → é o último
+
+	# Atualiza o ponteiro anterior do próximo nó
+	sw t1, 0(t4)               # próximo->prev = anterior
+
+# Finalização da remoção
+fim_remove:
+
+	# Mensagem de sucesso
+	la a0, str_rmv
+	addi a7, zero, 4
+	ecall
+
+	# Volta ao menu principal
+	j menu_inicial
+
+# CASO: tentativa de remover locomotiva
+nao_remove_locomotiva:
+
+	la a0, str_no_remove   # "Nao e possivel remover a locomotiva!"
+	addi a7, zero, 4
+	ecall
+    	# Aquivolta ao menu
+	j menu_inicial
+
+# CASO: ID não encontrado
+nao_encontrado:
+
+	la a0, str_not_found #"Vagao nao encontrado!"
+	addi a7, zero, 4
+	ecall
+	#volta ao menu
+	j menu_inicial
 	
 	
 #Finalização do codigo
